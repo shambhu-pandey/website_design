@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TCS NQT Prep — Coding Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════ -->
+<header class="header">
+  <button class="btn-icon sidebar-toggle" id="sidebarToggle" style="display:flex">☰</button>
+  <div class="header-logo">
+    <span class="logo-badge">TCS NQT</span>
+    <span>Prep Dashboard</span>
+  </div>
+  <div class="header-search">
+    <input type="text" id="searchInput" placeholder="Search questions, topics..." />
+    <span class="search-icon">🔍</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn-icon" id="themeToggle" title="Toggle Theme">☀️</button>
+    <button class="btn-icon" id="myNotesBtn" title="My Notes">🗒️</button>
+    <div id="userArea" style="display:flex;align-items:center;gap:8px">
+      <button class="btn-icon" id="authBtn" title="Sign in / Sign up">👤</button>
+      <span id="usernameDisplay" style="font-weight:600;color:var(--text-secondary)"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════════
+     APP LAYOUT
+════════════════════════════════════════════════ -->
+<div class="app-layout">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+
+      <div class="sidebar-section-label">Navigation</div>
+
+      <div class="sidebar-item active" data-topic="All" onclick="setActiveTopic('All', this)">
+        <span class="s-icon">🏠</span> All Questions
+        <span class="s-count" id="count_All">100</span>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Topics</div>
+
+      <div class="sidebar-item" data-topic="Arrays" onclick="setActiveTopic('Arrays', this)">
+        <span class="s-icon">📊</span> Arrays
+        <span class="s-count" id="count_Arrays">0/20</span>
+      </div>
+      <div class="sidebar-item" data-topic="Strings" onclick="setActiveTopic('Strings', this)">
+        <span class="s-icon">🔤</span> Strings
+        <span class="s-count" id="count_Strings">0/15</span>
+      </div>
+      <div class="sidebar-item" data-topic="Numbers" onclick="setActiveTopic('Numbers', this)">
+        <span class="s-icon">🔢</span> Numbers
+        <span class="s-count" id="count_Numbers">0/17</span>
+      </div>
+      <div class="sidebar-item" data-topic="Number System" onclick="setActiveTopic('Number System', this)">
+        <span class="s-icon">💱</span> Number System
+        <span class="s-count" id="count_Number_System">0/7</span>
+      </div>
+      <div class="sidebar-item" data-topic="Sorting" onclick="setActiveTopic('Sorting', this)">
+        <span class="s-icon">🔃</span> Sorting
+        <span class="s-count" id="count_Sorting">0/5</span>
+      </div>
+      <div class="sidebar-item" data-topic="Linked List" onclick="setActiveTopic('Linked List', this)">
+        <span class="s-icon">🔗</span> Linked List
+        <span class="s-count" id="count_Linked_List">0/5</span>
+      </div>
+      <div class="sidebar-item" data-topic="Stack" onclick="setActiveTopic('Stack', this)">
+        <span class="s-icon">📚</span> Stack
+        <span class="s-count" id="count_Stack">0/4</span>
+      </div>
+      <div class="sidebar-item" data-topic="Queue" onclick="setActiveTopic('Queue', this)">
+        <span class="s-icon">🎯</span> Queue
+        <span class="s-count" id="count_Queue">0/3</span>
+      </div>
+      <div class="sidebar-item" data-topic="Trees" onclick="setActiveTopic('Trees', this)">
+        <span class="s-icon">🌲</span> Trees
+        <span class="s-count" id="count_Trees">0/4</span>
+      </div>
+      <div class="sidebar-item" data-topic="DP" onclick="setActiveTopic('DP', this)">
+        <span class="s-icon">🧩</span> DP
+        <span class="s-count" id="count_DP">0/5</span>
+      </div>
+      <div class="sidebar-item" data-topic="Greedy" onclick="setActiveTopic('Greedy', this)">
+        <span class="s-icon">⚡</span> Greedy
+        <span class="s-count" id="count_Greedy">0/4</span>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Revision</div>
+
+      <div class="sidebar-item" data-topic="Revision" onclick="setActiveTopic('Revision', this)">
+        <span class="s-icon">🔁</span> Revision Mode
+        <span class="s-count" id="count_Revision">⭐</span>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card" style="--stat-color: var(--accent)">
+        <div class="stat-icon">📋</div>
+        <div class="stat-value" id="statTotal">100</div>
+        <div class="stat-label">Total Questions</div>
+      </div>
+      <div class="stat-card" style="--stat-color: #00d4aa">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="statDone">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-card" style="--stat-color: var(--medium)">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-value" id="statPending">100</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card" style="--stat-color: var(--accent2)">
+        <div class="stat-icon">🔁</div>
+        <div class="stat-value" id="statRevision">0</div>
+        <div class="stat-label">For Revision</div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span class="progress-title">Overall Progress</span>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-legend">
+        <span><span class="legend-dot" style="background:var(--easy)"></span>Easy</span>
+        <span><span class="legend-dot" style="background:var(--medium)"></span>Medium</span>
+        <span><span class="legend-dot" style="background:var(--hard)"></span>Hard</span>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MAIN PANEL (Topic / All Questions View)
+    ══════════════════════════════════════════ -->
+    <div class="main-panel visible" id="mainPanel" style="display:block">
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <span class="filter-label">Difficulty:</span>
+        <div class="chip easy diff-chip active" data-diff="All">All</div>
+        <div class="chip easy diff-chip" data-diff="Easy">Easy</div>
+        <div class="chip medium diff-chip" data-diff="Medium">Medium</div>
+        <div class="chip hard diff-chip" data-diff="Hard">Hard</div>
+      </div>
+
+      <!-- Section Header -->
+      <div class="section-header">
+        <div class="section-title">
+          📂 <span id="sectionTitle">All Questions</span>
+          <span class="section-count" id="sectionCount">100</span>
+        </div>
+        <div class="filter-check-group">
+          <button class="check-chip active status-chip" data-status="All">All</button>
+          <button class="check-chip status-chip" data-status="Completed">✅ Done</button>
+          <button class="check-chip status-chip" data-status="Pending">⏳ Pending</button>
+          <button class="check-chip status-chip" data-status="Starred">⭐ Starred</button>
+        </div>
+      </div>
+
+      <!-- Question List -->
+      <div class="question-list" id="questionList"></div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         REVISION PANEL
+    ══════════════════════════════════════════ -->
+    <div class="revision-panel" id="revisionPanel" style="display:none">
+
+      <div class="revision-section-card">
+        <div class="rev-section-title">⭐ Starred / Important Questions</div>
+        <div class="rev-list" id="revStarred"></div>
+      </div>
+
+      <div class="revision-section-card">
+        <div class="rev-section-title">🔁 My Revision List</div>
+        <div class="rev-list" id="revRevision"></div>
+      </div>
+
+      <div class="revision-section-card">
+        <div class="rev-section-title">💀 Weak (Practiced but Not Completed)</div>
+        <div class="rev-list" id="revWeak"></div>
+      </div>
+
+      <div class="revision-section-card">
+        <div class="rev-section-title">🎯 Pre-Marked Important (TCS Pattern)</div>
+        <div class="rev-list" id="revImportant"></div>
+      </div>
+
+      <div class="revision-section-card">
+        <div class="rev-section-title">🔥 Frequently Asked (Medium + Hard)</div>
+        <div class="rev-list" id="revFrequent"></div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Auth Modal -->
+<div class="modal" id="authModal" style="display:none">
+  <div class="modal-inner">
+    <h3>Sign in / Sign up</h3>
+    <div class="auth-forms">
+      <div>
+        <div class="area-label">Username</div>
+        <input id="authUser" type="text" placeholder="username" />
+      </div>
+      <div style="margin-top:8px">
+        <div class="area-label">Password</div>
+        <input id="authPass" type="password" placeholder="password" />
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="link-btn" id="signinBtn">Sign In</button>
+        <button class="link-btn" id="signupBtn">Sign Up</button>
+        <button class="link-btn" id="authCloseBtn">Close</button>
+      </div>
+      <div id="authMsg" style="margin-top:8px;color:var(--text-muted)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- My Notes Modal -->
+<div class="modal" id="notesModal" style="display:none">
+  <div class="modal-inner">
+    <h3>My Notes</h3>
+    <div id="notesList" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto"></div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
+      <button class="link-btn" id="notesCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts (order matters!) -->
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
