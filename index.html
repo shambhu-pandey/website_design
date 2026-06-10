@@ -256,6 +256,22 @@
 
 <!-- Scripts (order matters!) -->
 <script src="data.js"></script>
-<script type="module" src="script.js"></script>
+<script type="module">
+  import * as app from './script.js';
+
+  window.handleCheck = app.handleCheck;
+  window.handleStar = app.handleStar;
+  window.toggleExpand = app.toggleExpand;
+  window.switchTab = app.switchTab;
+  window.autoSave = app.autoSave;
+  window.openNotes = app.openNotes;
+  window.handleImageUpload = app.handleImageUpload;
+  window.removeImage = app.removeImage;
+  window.handleDrop = app.handleDrop;
+  window.handlePaste = app.handlePaste;
+  window.jumpToQuestion = app.jumpToQuestion;
+  window.openNoteEditor = app.openNoteEditor;
+  window.setActiveTopic = app.setActiveTopic;
+</script>
 </body>
 </html>
