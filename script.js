@@ -823,3 +823,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   registerListeners();
   await init();
 });
+
+// Expose functions globally for inline HTML handlers
+window.handleCheck = handleCheck;
+window.handleStar = handleStar;
+window.toggleExpand = toggleExpand;
+window.switchTab = switchTab;
+window.autoSave = autoSave;
+window.openNotes = openNotes;
+window.handleImageUpload = handleImageUpload;
+window.removeImage = removeImage;
+window.handleDrop = handleDrop;
+window.handlePaste = handlePaste;
+window.jumpToQuestion = jumpToQuestion;
+window.openNoteEditor = openNoteEditor;
+window.setActiveTopic = setActiveTopic;
