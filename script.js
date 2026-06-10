@@ -1,3 +1,7 @@
+import {
+  saveUserData,
+  loadUserData
+} from './firebase.js';
 /* ============================================================
    script.js — TCS NQT Prep Dashboard Logic
    All state managed via localStorage
@@ -51,9 +55,44 @@ function loadState() {
   try { return JSON.parse(localStorage.getItem(getStorageKey())) || {}; }
   catch(e) { return {}; }
 }
-function saveState(state) {
-  localStorage.setItem(getStorageKey(), JSON.stringify(state));
+
+async function syncFromFirebase() {
+
+  const user = getCurrentUser();
+
+  if (!user) return;
+
+  const firebaseData = await loadUserData(user);
+
+  if (firebaseData) {
+
+    localStorage.setItem(
+      getStorageKey(),
+      JSON.stringify(firebaseData)
+    );
+
+    console.log("Firebase Sync Success");
+
+  }
 }
+// function saveState(state) {
+//   localStorage.setItem(getStorageKey(), JSON.stringify(state));
+// }
+
+async function saveState(state) {
+
+  localStorage.setItem(
+    getStorageKey(),
+    JSON.stringify(state)
+  );
+
+  const user = getCurrentUser();
+
+  if (user) {
+    await saveUserData(user, state);
+  }
+}
+
 function getQ(id) {
   const s = loadState();
   return s[id] || { practiced: false, completed: false, revision: false, starred: false, notes: '', approach: '', code: '', trick: '', images: [], updatedAt: null };
@@ -698,7 +737,8 @@ function handlePaste(e, id) {
 }
 
 // ── Init ─────────────────────────────────────────────────
-function init() {
+async function init(){
+    await syncFromFirebase();
   // Theme
   const savedTheme = localStorage.getItem('tcs_theme') || 'dark';
   applyTheme(savedTheme);
