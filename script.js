@@ -57,37 +57,28 @@ function loadState() {
 }
 
 async function syncFromFirebase() {
-
   const user = getCurrentUser();
-
   if (!user) return;
 
   const firebaseData = await loadUserData(user);
 
-  if (firebaseData) {
-
+  // FIX 2: Only overwrite localStorage if Firebase has actual data
+  if (firebaseData && Object.keys(firebaseData).length > 0) {
     localStorage.setItem(
       getStorageKey(),
       JSON.stringify(firebaseData)
     );
-
     console.log("Firebase Sync Success");
-
   }
 }
-// function saveState(state) {
-//   localStorage.setItem(getStorageKey(), JSON.stringify(state));
-// }
 
 async function saveState(state) {
-
   localStorage.setItem(
     getStorageKey(),
     JSON.stringify(state)
   );
 
   const user = getCurrentUser();
-
   if (user) {
     await saveUserData(user, state);
   }
@@ -97,10 +88,12 @@ function getQ(id) {
   const s = loadState();
   return s[id] || { practiced: false, completed: false, revision: false, starred: false, notes: '', approach: '', code: '', trick: '', images: [], updatedAt: null };
 }
+
+// FIX 3: saveState is async — catch errors silently
 function setQ(id, updates) {
   const s = loadState();
   s[id] = { ...getQ(id), ...updates };
-  saveState(s);
+  saveState(s).catch(console.error);
 }
 
 // ── Auth helpers ─────────────────────────────────────────
@@ -134,7 +127,14 @@ function signinUser(username, password) {
   return null;
 }
 
-function signoutUser() { setCurrentUser(null); showToast('Signed out'); init(); }
+async function signoutUser() {
+
+  setCurrentUser(null);
+
+  await init();
+
+  showToast('Signed out');
+}
 
 // Render username in header
 function updateUserUI() {
@@ -737,8 +737,62 @@ function handlePaste(e, id) {
 }
 
 // ── Init ─────────────────────────────────────────────────
-async function init(){
-    await syncFromFirebase();
+// FIX 1: Listeners are registered only ONCE here, never inside init()
+// so re-calling init() (e.g. after signout) won't double-attach them.
+function registerListeners() {
+  document.getElementById('authBtn').addEventListener('click', () => {
+    const user = getCurrentUser();
+    if (user) {
+      if (confirm('Sign out?')) { signoutUser(); }
+      return;
+    }
+    openAuthModal();
+  });
+
+  // FIX 1: signin — no more init() call, just refresh data manually
+  document.getElementById('signinBtn').addEventListener('click', async () => {
+    const u = document.getElementById('authUser').value.trim();
+    const p = document.getElementById('authPass').value;
+    const err = signinUser(u, p);
+    if (err) {
+      document.getElementById('authMsg').textContent = err;
+    } else {
+      await syncFromFirebase();
+      calcStats();
+      updateSidebarCounts();
+      applyFilters();
+      closeAuthModal();
+      updateUserUI();
+      showToast('Signed in ✅');
+    }
+  });
+
+  // FIX 1: signup — same, no more init() call
+  document.getElementById('signupBtn').addEventListener('click', async () => {
+    const u = document.getElementById('authUser').value.trim();
+    const p = document.getElementById('authPass').value;
+    const err = signupUser(u, p);
+    if (err) {
+      document.getElementById('authMsg').textContent = err;
+    } else {
+      await syncFromFirebase();
+      calcStats();
+      updateSidebarCounts();
+      applyFilters();
+      closeAuthModal();
+      updateUserUI();
+      showToast('Account created & signed in 🚀');
+    }
+  });
+
+  document.getElementById('authCloseBtn').addEventListener('click', closeAuthModal);
+  document.getElementById('myNotesBtn').addEventListener('click', openNotesModal);
+  document.getElementById('notesCloseBtn').addEventListener('click', closeNotesModal);
+}
+
+async function init() {
+  await syncFromFirebase();
+
   // Theme
   const savedTheme = localStorage.getItem('tcs_theme') || 'dark';
   applyTheme(savedTheme);
@@ -751,36 +805,11 @@ async function init(){
   const allBtn = document.querySelector('.sidebar-item[data-topic="All"]');
   setActiveTopic('All', allBtn);
 
-  // Wire auth and notes buttons
-  document.getElementById('authBtn').addEventListener('click', () => {
-    const user = getCurrentUser();
-    if (user) {
-      // sign out
-      if (confirm('Sign out?')) { signoutUser(); }
-      return;
-    }
-    openAuthModal();
-  });
-  document.getElementById('signinBtn').addEventListener('click', () => {
-    const u = document.getElementById('authUser').value.trim();
-    const p = document.getElementById('authPass').value;
-    const err = signinUser(u, p);
-    if (err) document.getElementById('authMsg').textContent = err;
-    else { closeAuthModal(); updateUserUI(); init(); showToast('Signed in'); }
-  });
-  document.getElementById('signupBtn').addEventListener('click', () => {
-    const u = document.getElementById('authUser').value.trim();
-    const p = document.getElementById('authPass').value;
-    const err = signupUser(u, p);
-    if (err) document.getElementById('authMsg').textContent = err;
-    else { closeAuthModal(); updateUserUI(); init(); showToast('Account created & signed in'); }
-  });
-  document.getElementById('authCloseBtn').addEventListener('click', closeAuthModal);
-
-  document.getElementById('myNotesBtn').addEventListener('click', openNotesModal);
-  document.getElementById('notesCloseBtn').addEventListener('click', closeNotesModal);
-
   updateUserUI();
 }
 
-window.addEventListener('DOMContentLoaded', init);
+// FIX 1: DOMContentLoaded fires init + registerListeners exactly ONCE
+window.addEventListener('DOMContentLoaded', async () => {
+  registerListeners();
+  await init();
+});F
