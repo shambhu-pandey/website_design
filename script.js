@@ -824,17 +824,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   await init();
 });
 
-// Expose functions globally for inline HTML handlers
-window.handleCheck = handleCheck;
-window.handleStar = handleStar;
-window.toggleExpand = toggleExpand;
-window.switchTab = switchTab;
-window.autoSave = autoSave;
-window.openNotes = openNotes;
-window.handleImageUpload = handleImageUpload;
-window.removeImage = removeImage;
-window.handleDrop = handleDrop;
-window.handlePaste = handlePaste;
-window.jumpToQuestion = jumpToQuestion;
-window.openNoteEditor = openNoteEditor;
-window.setActiveTopic = setActiveTopic;
+// Make functions globally accessible
+globalThis.handleCheck = handleCheck;
+globalThis.handleStar = handleStar;
+globalThis.toggleExpand = toggleExpand;
+globalThis.switchTab = switchTab;
+globalThis.autoSave = autoSave;
+globalThis.openNotes = openNotes;
+globalThis.handleImageUpload = handleImageUpload;
+globalThis.removeImage = removeImage;
+globalThis.handleDrop = handleDrop;
+globalThis.handlePaste = handlePaste;
+globalThis.jumpToQuestion = jumpToQuestion;
+globalThis.openNoteEditor = openNoteEditor;
+globalThis.setActiveTopic = setActiveTopic;
