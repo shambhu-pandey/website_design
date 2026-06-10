@@ -822,4 +822,4 @@ async function init() {
 window.addEventListener('DOMContentLoaded', async () => {
   registerListeners();
   await init();
-});F
+});
