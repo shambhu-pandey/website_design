@@ -381,7 +381,7 @@ function renderQuestions(questions) {
 }
 
 // ── Toggle Expand ──────────────────────────────────────────
-function toggleExpand(id) {
+export function toggleExpand(id) {
   const el  = document.getElementById('expand' + id);
   const btn = document.getElementById('expandBtn' + id);
   const isOpen = el.classList.contains('open');
@@ -390,7 +390,7 @@ function toggleExpand(id) {
 }
 
 // ── Tab Switch ────────────────────────────────────────────
-function switchTab(id, tab, btnEl) {
+export function switchTab(id, tab, btnEl) {
   const panels = ['notes','approach','code','trick'];
   panels.forEach(p => {
     const panel = document.getElementById(`panel_${p}_${id}`);
@@ -404,7 +404,7 @@ function switchTab(id, tab, btnEl) {
 
 // ── Auto-save with debounce ───────────────────────────────
 const saveTimers = {};
-function autoSave(id, field, value) {
+export function autoSave(id, field, value) {
   setQ(id, { [field]: value, updatedAt: Date.now() });
   const siKey = `si_${field}_${id}`;
   const ind = document.getElementById(siKey);
@@ -420,7 +420,7 @@ function autoSave(id, field, value) {
 }
 
 // ── Check Handlers ────────────────────────────────────────
-function handleCheck(id, field, value) {
+export function handleCheck(id, field, value) {
   setQ(id, { [field]: value });
   // Update card style for completed
   if (field === 'completed') {
@@ -433,7 +433,7 @@ function handleCheck(id, field, value) {
 }
 
 // ── Star ──────────────────────────────────────────────────
-function handleStar(id) {
+export function handleStar(id) {
   const d = getQ(id);
   const newVal = !d.starred;
   setQ(id, { starred: newVal });
@@ -443,7 +443,7 @@ function handleStar(id) {
 }
 
 // ── Sidebar Navigation ────────────────────────────────────
-function setActiveTopic(topic, clickedEl) {
+export function setActiveTopic(topic, clickedEl) {
   activeTopicFilter = topic;
   // Update sidebar active
   sidebarItems.forEach(el => el.classList.remove('active'));
@@ -564,7 +564,7 @@ function renderRevSection(containerId, questions, emptyMsg) {
   `).join('');
 }
 
-function jumpToQuestion(id) {
+export function jumpToQuestion(id) {
   const q = QUESTIONS.find(x => x.id === id);
   if (!q) return;
   // Switch to topic
@@ -581,7 +581,7 @@ function jumpToQuestion(id) {
   }, 200);
 }
 
-function openNoteEditor(id) {
+export function openNoteEditor(id) {
   jumpToQuestion(id);
   setTimeout(() => openNotes(id), 300);
 }
@@ -643,7 +643,7 @@ function showToast(msg) {
 }
 
 // ── Image Upload / Gallery Handlers ─────────────────────
-function handleImageUpload(id, inputEl) {
+export function handleImageUpload(id, inputEl) {
   const file = inputEl.files && inputEl.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -662,7 +662,7 @@ function handleImageUpload(id, inputEl) {
   inputEl.value = '';
 }
 
-function removeImage(id, idx) {
+export function removeImage(id, idx) {
   const q = getQ(id);
   if (!q.images || idx < 0 || idx >= q.images.length) return;
   q.images.splice(idx, 1);
@@ -672,7 +672,7 @@ function removeImage(id, idx) {
 }
 
 // Open notes tab and focus textarea
-function openNotes(id) {
+export function openNotes(id) {
   const el  = document.getElementById('expand' + id);
   const btn = document.getElementById('expandBtn' + id);
   if (!el) return;
@@ -691,7 +691,7 @@ function openNotes(id) {
 }
 
 // Handle files dropped onto gallery
-function handleDrop(event, id) {
+export function handleDrop(event, id) {
   event.preventDefault();
   const files = event.dataTransfer && event.dataTransfer.files;
   if (!files || !files.length) return;
@@ -713,7 +713,7 @@ function handleDrop(event, id) {
 }
 
 // Handle paste (images from clipboard)
-function handlePaste(e, id) {
+export function handlePaste(e, id) {
   const items = (e.clipboardData && e.clipboardData.items) || [];
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
@@ -824,17 +824,16 @@ window.addEventListener('DOMContentLoaded', async () => {
   await init();
 });
 
-// Make functions globally accessible
-globalThis.handleCheck = handleCheck;
-globalThis.handleStar = handleStar;
-globalThis.toggleExpand = toggleExpand;
-globalThis.switchTab = switchTab;
-globalThis.autoSave = autoSave;
-globalThis.openNotes = openNotes;
-globalThis.handleImageUpload = handleImageUpload;
-globalThis.removeImage = removeImage;
-globalThis.handleDrop = handleDrop;
-globalThis.handlePaste = handlePaste;
-globalThis.jumpToQuestion = jumpToQuestion;
-globalThis.openNoteEditor = openNoteEditor;
-globalThis.setActiveTopic = setActiveTopic;
+window.handleCheck = handleCheck;
+window.handleStar = handleStar;
+window.toggleExpand = toggleExpand;
+window.switchTab = switchTab;
+window.autoSave = autoSave;
+window.openNotes = openNotes;
+window.handleImageUpload = handleImageUpload;
+window.removeImage = removeImage;
+window.handleDrop = handleDrop;
+window.handlePaste = handlePaste;
+window.jumpToQuestion = jumpToQuestion;
+window.openNoteEditor = openNoteEditor;
+window.setActiveTopic = setActiveTopic;
