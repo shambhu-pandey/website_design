@@ -1,11 +1,14 @@
-import {
-  saveUserData,
-  loadUserData
-} from './firebase.js';
 /* ============================================================
    script.js — TCS NQT Prep Dashboard Logic
-   All state managed via localStorage
+   Architecture: Classic script (NOT type="module")
+   Firebase is loaded via dynamic import() so ES module CDN
+   imports in firebase.js continue to work, while all handler
+   functions are exposed on window for inline HTML onclick/onchange.
    ============================================================ */
+
+// ── Firebase bridge (filled after dynamic import resolves) ─
+let saveUserData = async () => {};
+let loadUserData = async () => null;
 
 // ── DOM refs ──────────────────────────────────────────────
 const sidebar        = document.getElementById('sidebar');
@@ -27,15 +30,13 @@ const progressFill   = document.getElementById('progressFill');
 const progressPct    = document.getElementById('progressPct');
 
 // Filters
-let activeTopicFilter    = 'All';
-let activeDiffFilter     = 'All';
-let activeStatusFilter   = 'All';
+let activeTopicFilter  = 'All';
+let activeDiffFilter   = 'All';
+let activeStatusFilter = 'All';
 
 // ── LocalStorage Helpers ───────────────────────────────────
-const LS_KEY = 'tcs_nqt_v2';
-
-// User keys
-const USERS_KEY = 'tcs_nqt_users';
+const LS_KEY           = 'tcs_nqt_v2';
+const USERS_KEY        = 'tcs_nqt_users';
 const CURRENT_USER_KEY = 'tcs_nqt_user';
 
 function getCurrentUser() {
@@ -43,7 +44,7 @@ function getCurrentUser() {
 }
 function setCurrentUser(u) {
   if (u) localStorage.setItem(CURRENT_USER_KEY, u);
-  else localStorage.removeItem(CURRENT_USER_KEY);
+  else    localStorage.removeItem(CURRENT_USER_KEY);
 }
 
 function getStorageKey() {
@@ -53,31 +54,21 @@ function getStorageKey() {
 
 function loadState() {
   try { return JSON.parse(localStorage.getItem(getStorageKey())) || {}; }
-  catch(e) { return {}; }
+  catch (e) { return {}; }
 }
 
 async function syncFromFirebase() {
   const user = getCurrentUser();
   if (!user) return;
-
   const firebaseData = await loadUserData(user);
-
-  // FIX 2: Only overwrite localStorage if Firebase has actual data
   if (firebaseData && Object.keys(firebaseData).length > 0) {
-    localStorage.setItem(
-      getStorageKey(),
-      JSON.stringify(firebaseData)
-    );
-    console.log("Firebase Sync Success");
+    localStorage.setItem(getStorageKey(), JSON.stringify(firebaseData));
+    console.log('Firebase Sync Success');
   }
 }
 
 async function saveState(state) {
-  localStorage.setItem(
-    getStorageKey(),
-    JSON.stringify(state)
-  );
-
+  localStorage.setItem(getStorageKey(), JSON.stringify(state));
   const user = getCurrentUser();
   if (user) {
     await saveUserData(user, state);
@@ -86,31 +77,43 @@ async function saveState(state) {
 
 function getQ(id) {
   const s = loadState();
-  return s[id] || { practiced: false, completed: false, revision: false, starred: false, notes: '', approach: '', code: '', trick: '', images: [], updatedAt: null };
+  return s[id] || {
+    practiced: false,
+    completed: false,
+    revision:  false,
+    starred:   false,
+    notes:     '',
+    approach:  '',
+    code:      '',
+    trick:     '',
+    images:    [],
+    updatedAt: null
+  };
 }
 
-// FIX 3: saveState is async — catch errors silently
 function setQ(id, updates) {
   const s = loadState();
   s[id] = { ...getQ(id), ...updates };
   saveState(s).catch(console.error);
 }
 
-// ── Auth helpers ─────────────────────────────────────────
+// ── Auth helpers ──────────────────────────────────────────
 function openAuthModal() {
   document.getElementById('authModal').style.display = 'block';
   document.getElementById('authMsg').textContent = '';
 }
-function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
+function closeAuthModal() {
+  document.getElementById('authModal').style.display = 'none';
+}
 
 function getUsers() {
   try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; }
-  catch(e) { return {}; }
+  catch (e) { return {}; }
 }
 function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
 
 function signupUser(username, password) {
-  if (!username || !password) { return 'Enter username & password'; }
+  if (!username || !password) return 'Enter username & password';
   const users = getUsers();
   if (users[username]) return 'User already exists';
   users[username] = { password };
@@ -128,31 +131,27 @@ function signinUser(username, password) {
 }
 
 async function signoutUser() {
-
   setCurrentUser(null);
-
   await init();
-
   showToast('Signed out');
 }
 
-// Render username in header
 function updateUserUI() {
-  const u = getCurrentUser();
-  const disp = document.getElementById('usernameDisplay');
+  const u       = getCurrentUser();
+  const disp    = document.getElementById('usernameDisplay');
   const authBtn = document.getElementById('authBtn');
   if (u) {
-    disp.textContent = u;
-    authBtn.title = 'Sign out';
+    disp.textContent  = u;
+    authBtn.title     = 'Sign out';
     authBtn.textContent = '👤';
   } else {
-    disp.textContent = '';
-    authBtn.title = 'Sign in / Sign up';
+    disp.textContent  = '';
+    authBtn.title     = 'Sign in / Sign up';
     authBtn.textContent = '👤';
   }
 }
 
-// ── My Notes modal ────────────────────────────────────────
+// ── My Notes modal ─────────────────────────────────────────
 function escapeHtml(text) {
   return String(text)
     .replace(/&/g, '&amp;')
@@ -179,28 +178,37 @@ function renderSavedPreview(text) {
 
 function openNotesModal() {
   const modal = document.getElementById('notesModal');
-  const list = document.getElementById('notesList');
+  const list  = document.getElementById('notesList');
   list.innerHTML = '';
+
   const notes = [];
   QUESTIONS.forEach(q => {
     const d = getQ(q.id);
-    if ((d.notes && d.notes.trim()) || (d.approach && d.approach.trim()) || (d.code && d.code.trim()) || (d.trick && d.trick.trim()) || (d.images && d.images.length)) {
+    if (
+      (d.notes    && d.notes.trim())    ||
+      (d.approach && d.approach.trim()) ||
+      (d.code     && d.code.trim())     ||
+      (d.trick    && d.trick.trim())    ||
+      (d.images   && d.images.length)
+    ) {
       notes.push({ q, d });
     }
   });
+
   if (!notes.length) {
     list.innerHTML = '<div class="empty-state">No notes yet. Open a question and add your notes.</div>';
   } else {
     notes.forEach(item => {
       const div = document.createElement('div');
+
       const previewParts = [];
-      if (item.d.notes && item.d.notes.trim()) previewParts.push(item.d.notes.trim());
+      if (item.d.notes    && item.d.notes.trim())    previewParts.push(item.d.notes.trim());
       if (item.d.approach && item.d.approach.trim()) previewParts.push(`Approach: ${item.d.approach.trim()}`);
-      if (item.d.code && item.d.code.trim()) previewParts.push(`Code: ${item.d.code.trim()}`);
-      if (item.d.trick && item.d.trick.trim()) previewParts.push(`Trick: ${item.d.trick.trim()}`);
+      if (item.d.code     && item.d.code.trim())     previewParts.push(`Code: ${item.d.code.trim()}`);
+      if (item.d.trick    && item.d.trick.trim())    previewParts.push(`Trick: ${item.d.trick.trim()}`);
 
       const previewText = previewParts.join('\n\n');
-      const preview = previewText.length > 320 ? `${previewText.slice(0, 320).trim()}...` : previewText;
+      const preview     = previewText.length > 320 ? `${previewText.slice(0, 320).trim()}...` : previewText;
 
       div.className = 'note-card';
       div.innerHTML = `
@@ -215,37 +223,46 @@ function openNotesModal() {
         <div class="note-card-footer">
           <span class="note-card-stats">${item.d.images && item.d.images.length ? `${item.d.images.length} image${item.d.images.length > 1 ? 's' : ''}` : 'Text note'}</span>
           <div class="note-card-actions">
-            <button class="link-btn note-view-btn">View</button>
-            <button class="link-btn note-edit-btn">Edit</button>
+            <button class="link-btn note-view-btn" data-id="${item.q.id}">View</button>
+            <button class="link-btn note-edit-btn" data-id="${item.q.id}">Edit</button>
           </div>
         </div>
       `;
-      div.querySelector('.note-view-btn').addEventListener('click', () => {
-        closeNotesModal();
-        jumpToQuestion(item.q.id);
-      });
-      div.querySelector('.note-edit-btn').addEventListener('click', () => {
-        closeNotesModal();
-        openNoteEditor(item.q.id);
-      });
       list.appendChild(div);
     });
+
+    // Single delegated listener on the list container
+    list.addEventListener('click', (e) => {
+      const viewBtn = e.target.closest('.note-view-btn');
+      const editBtn = e.target.closest('.note-edit-btn');
+      if (viewBtn) {
+        closeNotesModal();
+        jumpToQuestion(Number(viewBtn.dataset.id));
+      }
+      if (editBtn) {
+        closeNotesModal();
+        openNoteEditor(Number(editBtn.dataset.id));
+      }
+    });
   }
+
   modal.style.display = 'block';
 }
 
-function closeNotesModal() { document.getElementById('notesModal').style.display = 'none'; }
+function closeNotesModal() {
+  document.getElementById('notesModal').style.display = 'none';
+}
 
-// ── Stats Calculation ──────────────────────────────────────
+// ── Stats ─────────────────────────────────────────────────
 function calcStats() {
-  const total     = QUESTIONS.length;
+  const total = QUESTIONS.length;
   let completed   = 0;
   let revisionCnt = 0;
 
   QUESTIONS.forEach(q => {
     const d = getQ(q.id);
-    if (d.completed)  completed++;
-    if (d.revision)   revisionCnt++;
+    if (d.completed) completed++;
+    if (d.revision)  revisionCnt++;
   });
 
   const pending = total - completed;
@@ -276,59 +293,55 @@ function renderQuestions(questions) {
   sectionCount.textContent = questions.length;
 
   questions.forEach((q, idx) => {
-    const d = getQ(q.id);
+    const d    = getQ(q.id);
     const card = document.createElement('div');
     card.className = 'q-card' + (d.completed ? ' completed-row' : '');
     card.style.animationDelay = (idx * 0.03) + 's';
     card.dataset.id = q.id;
 
     card.innerHTML = `
-      <div class="q-header" onclick="toggleExpand(${q.id})">
-        <span class="q-num">#${String(q.id).padStart(3,'0')}</span>
+      <div class="q-header" data-action="expand" data-id="${q.id}">
+        <span class="q-num">#${String(q.id).padStart(3, '0')}</span>
         <span class="q-title">${q.title}</span>
         <span class="q-badge ${q.difficulty}">${q.difficulty}</span>
-        <div class="q-actions" onclick="event.stopPropagation()">
+        <div class="q-actions">
           <div class="q-check-group">
             <label class="q-check-label" title="Practiced">
-              <input type="checkbox" ${d.practiced ? 'checked' : ''}
-                onchange="handleCheck(${q.id},'practiced',this.checked)">
-              <span class="check-dot">${d.practiced?'✓':''}</span>
+              <input type="checkbox" data-action="check" data-id="${q.id}" data-field="practiced" ${d.practiced ? 'checked' : ''}>
+              <span class="check-dot">${d.practiced ? '✓' : ''}</span>
               P
             </label>
             <label class="q-check-label" title="Completed">
-              <input type="checkbox" ${d.completed ? 'checked' : ''}
-                onchange="handleCheck(${q.id},'completed',this.checked)">
-              <span class="check-dot">${d.completed?'✓':''}</span>
+              <input type="checkbox" data-action="check" data-id="${q.id}" data-field="completed" ${d.completed ? 'checked' : ''}>
+              <span class="check-dot">${d.completed ? '✓' : ''}</span>
               ✅
             </label>
             <label class="q-check-label revision-label" title="Add to Revision">
-              <input type="checkbox" ${d.revision ? 'checked' : ''}
-                onchange="handleCheck(${q.id},'revision',this.checked)">
-              <span class="check-dot">${d.revision?'✓':''}</span>
+              <input type="checkbox" data-action="check" data-id="${q.id}" data-field="revision" ${d.revision ? 'checked' : ''}>
+              <span class="check-dot">${d.revision ? '✓' : ''}</span>
               🔁
             </label>
           </div>
-          <button class="star-btn ${d.starred ? 'starred' : ''}"
-            onclick="handleStar(${q.id})" title="Star">★</button>
-          <button class="notes-btn" onclick="openNotes(${q.id})" title="Open Notes">📝</button>
+          <button class="star-btn ${d.starred ? 'starred' : ''}" data-action="star" data-id="${q.id}" title="Star">★</button>
+          <button class="notes-btn" data-action="notes" data-id="${q.id}" title="Open Notes">📝</button>
           <a href="${q.link}" target="_blank" class="link-btn">Practice →</a>
-          <button class="expand-btn" id="expandBtn${q.id}">▼</button>
+          <button class="expand-btn" id="expandBtn${q.id}" data-action="expand" data-id="${q.id}">▼</button>
         </div>
       </div>
 
       <div class="q-expand" id="expand${q.id}">
         <div class="q-expand-inner">
           <div class="expand-tabs">
-            <button class="expand-tab active" onclick="switchTab(${q.id},'notes',this)">📝 Notes</button>
-            <button class="expand-tab" onclick="switchTab(${q.id},'approach',this)">🧠 Approach</button>
-            <button class="expand-tab" onclick="switchTab(${q.id},'code',this)">💻 Code</button>
-            <button class="expand-tab" onclick="switchTab(${q.id},'trick',this)">⚡ Trick</button>
+            <button class="expand-tab active" data-action="tab" data-id="${q.id}" data-tab="notes">📝 Notes</button>
+            <button class="expand-tab" data-action="tab" data-id="${q.id}" data-tab="approach">🧠 Approach</button>
+            <button class="expand-tab" data-action="tab" data-id="${q.id}" data-tab="code">💻 Code</button>
+            <button class="expand-tab" data-action="tab" data-id="${q.id}" data-tab="trick">⚡ Trick</button>
           </div>
 
           <div class="expand-panel active" id="panel_notes_${q.id}">
             <div class="area-label">My Notes</div>
-            <textarea class="notes-area" placeholder="Write your notes here... (e.g., what the problem is about, approach summary)"
-              oninput="autoSave(${q.id},'notes',this.value)" onpaste="handlePaste(event,${q.id})">${d.notes || ''}</textarea>
+            <textarea class="notes-area" data-action="autosave" data-id="${q.id}" data-field="notes"
+              placeholder="Write your notes here... (e.g., what the problem is about, approach summary)">${d.notes || ''}</textarea>
             <div class="save-indicator" id="si_notes_${q.id}">✓ Saved</div>
             <div class="saved-note-box">
               <div class="saved-note-head">
@@ -339,102 +352,193 @@ function renderQuestions(questions) {
             </div>
 
             <div style="margin-top:10px">
-              <label style="font-size:0.85rem;color:var(--text-muted);font-weight:700;margin-bottom:6px;display:block">Attach images (screens, diagrams):</label>
-              <input type="file" accept="image/*" onchange="handleImageUpload(${q.id},this)" />
+              <label style="font-size:0.85rem;color:var(--text-muted);font-weight:700;margin-bottom:6px;display:block">
+                Attach images (screens, diagrams):
+              </label>
+              <input type="file" accept="image/*" data-action="imgupload" data-id="${q.id}" />
             </div>
-            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px">You can also drag & drop images here or paste into the notes field.</div>
-            <div class="img-gallery" id="imgGallery_${q.id}" ondragover="event.preventDefault()" ondrop="handleDrop(event,${q.id})">
-              ${ (d.images || []).map((img, i) => `
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:8px">
+              You can also drag &amp; drop images here or paste into the notes field.
+            </div>
+            <div class="img-gallery" id="imgGallery_${q.id}" data-action="imgdrop" data-id="${q.id}">
+              ${(d.images || []).map((img, i) => `
                 <div class="img-thumb" data-idx="${i}">
                   <img src="${img.src}" alt="${img.name || 'img'}">
-                  <button class="img-remove" onclick="removeImage(${q.id},${i})" title="Remove">✕</button>
+                  <button class="img-remove" data-action="imgremove" data-id="${q.id}" data-idx="${i}" title="Remove">✕</button>
                 </div>
-              `).join('') }
+              `).join('')}
             </div>
           </div>
 
           <div class="expand-panel" id="panel_approach_${q.id}">
             <div class="area-label">Approach / Algorithm</div>
-            <textarea class="notes-area" placeholder="Step-by-step algorithm, time & space complexity, edge cases..."
-              oninput="autoSave(${q.id},'approach',this.value)" onpaste="handlePaste(event,${q.id})">${d.approach || ''}</textarea>
+            <textarea class="notes-area" data-action="autosave" data-id="${q.id}" data-field="approach"
+              placeholder="Step-by-step algorithm, time &amp; space complexity, edge cases...">${d.approach || ''}</textarea>
             <div class="save-indicator" id="si_approach_${q.id}">✓ Saved</div>
           </div>
 
           <div class="expand-panel" id="panel_code_${q.id}">
             <div class="area-label">Code Snippet (Java / Python / C++)</div>
-            <textarea class="code-area" placeholder="// Paste or write your code solution here..."
-              oninput="autoSave(${q.id},'code',this.value)" onpaste="handlePaste(event,${q.id})">${d.code || ''}</textarea>
+            <textarea class="code-area" data-action="autosave" data-id="${q.id}" data-field="code"
+              placeholder="// Paste or write your code solution here...">${d.code || ''}</textarea>
             <div class="save-indicator" id="si_code_${q.id}">✓ Saved</div>
           </div>
 
           <div class="expand-panel" id="panel_trick_${q.id}">
             <div class="area-label">Quick Trick / Last-Minute Revision</div>
-            <textarea class="notes-area" placeholder="One-liner trick, pattern to remember, interview tip..."
-              oninput="autoSave(${q.id},'trick',this.value)" onpaste="handlePaste(event,${q.id})">${d.trick || ''}</textarea>
+            <textarea class="notes-area" data-action="autosave" data-id="${q.id}" data-field="trick"
+              placeholder="One-liner trick, pattern to remember, interview tip...">${d.trick || ''}</textarea>
             <div class="save-indicator" id="si_trick_${q.id}">✓ Saved</div>
           </div>
         </div>
       </div>
     `;
+
     questionList.appendChild(card);
   });
 }
 
-// ── Toggle Expand ──────────────────────────────────────────
-export function toggleExpand(id) {
+// ── Event Delegation on questionList ─────────────────────
+// One listener handles ALL card interactions — no inline handlers needed.
+const saveTimers = {};
+
+questionList.addEventListener('click', (e) => {
+  // ── Expand toggle ──
+  const expandTrigger = e.target.closest('[data-action="expand"]');
+  if (expandTrigger) {
+    // Don't expand when clicking inside q-actions
+    if (e.target.closest('.q-actions') && !e.target.closest('.expand-btn')) return;
+    toggleExpand(Number(expandTrigger.dataset.id));
+    return;
+  }
+
+  // ── Star ──
+  const starBtn = e.target.closest('[data-action="star"]');
+  if (starBtn) {
+    handleStar(Number(starBtn.dataset.id));
+    return;
+  }
+
+  // ── Notes open ──
+  const notesBtn = e.target.closest('[data-action="notes"]');
+  if (notesBtn) {
+    openNotes(Number(notesBtn.dataset.id));
+    return;
+  }
+
+  // ── Tab switch ──
+  const tabBtn = e.target.closest('[data-action="tab"]');
+  if (tabBtn) {
+    switchTab(Number(tabBtn.dataset.id), tabBtn.dataset.tab, tabBtn);
+    return;
+  }
+
+  // ── Image remove ──
+  const imgRemove = e.target.closest('[data-action="imgremove"]');
+  if (imgRemove) {
+    removeImage(Number(imgRemove.dataset.id), Number(imgRemove.dataset.idx));
+    return;
+  }
+});
+
+// Checkboxes — change event
+questionList.addEventListener('change', (e) => {
+  const cb = e.target.closest('[data-action="check"]');
+  if (cb) {
+    handleCheck(Number(cb.dataset.id), cb.dataset.field, cb.checked);
+    return;
+  }
+
+  // Image file upload
+  const imgInput = e.target.closest('[data-action="imgupload"]');
+  if (imgInput) {
+    handleImageUpload(Number(imgInput.dataset.id), imgInput);
+    return;
+  }
+});
+
+// Textarea autosave — input event
+questionList.addEventListener('input', (e) => {
+  const ta = e.target.closest('[data-action="autosave"]');
+  if (ta) {
+    autoSave(Number(ta.dataset.id), ta.dataset.field, ta.value);
+    return;
+  }
+});
+
+// Textarea paste (for image paste)
+questionList.addEventListener('paste', (e) => {
+  const ta = e.target.closest('[data-action="autosave"]');
+  if (ta) {
+    handlePaste(e, Number(ta.dataset.id));
+    return;
+  }
+});
+
+// Drag-over + drop on gallery
+questionList.addEventListener('dragover', (e) => {
+  if (e.target.closest('[data-action="imgdrop"]')) e.preventDefault();
+});
+questionList.addEventListener('drop', (e) => {
+  const gallery = e.target.closest('[data-action="imgdrop"]');
+  if (gallery) handleDrop(e, Number(gallery.dataset.id));
+});
+
+// ── Handler Functions ─────────────────────────────────────
+function toggleExpand(id) {
   const el  = document.getElementById('expand' + id);
   const btn = document.getElementById('expandBtn' + id);
+  if (!el) return;
   const isOpen = el.classList.contains('open');
   el.classList.toggle('open', !isOpen);
-  btn.classList.toggle('open', !isOpen);
+  if (btn) btn.classList.toggle('open', !isOpen);
 }
 
-// ── Tab Switch ────────────────────────────────────────────
-export function switchTab(id, tab, btnEl) {
-  const panels = ['notes','approach','code','trick'];
+function switchTab(id, tab, btnEl) {
+  const panels = ['notes', 'approach', 'code', 'trick'];
   panels.forEach(p => {
     const panel = document.getElementById(`panel_${p}_${id}`);
     if (panel) panel.classList.toggle('active', p === tab);
   });
-  // Update tab buttons
   const tabContainer = btnEl.closest('.expand-tabs');
-  tabContainer.querySelectorAll('.expand-tab').forEach(b => b.classList.remove('active'));
+  if (tabContainer) {
+    tabContainer.querySelectorAll('.expand-tab').forEach(b => b.classList.remove('active'));
+  }
   btnEl.classList.add('active');
 }
 
-// ── Auto-save with debounce ───────────────────────────────
-const saveTimers = {};
-export function autoSave(id, field, value) {
+function autoSave(id, field, value) {
   setQ(id, { [field]: value, updatedAt: Date.now() });
+
   const siKey = `si_${field}_${id}`;
-  const ind = document.getElementById(siKey);
-  if (!ind) return;
-  ind.classList.add('show');
-  clearTimeout(saveTimers[siKey]);
-  saveTimers[siKey] = setTimeout(() => ind.classList.remove('show'), 1500);
+  const ind   = document.getElementById(siKey);
+  if (ind) {
+    ind.classList.add('show');
+    clearTimeout(saveTimers[siKey]);
+    saveTimers[siKey] = setTimeout(() => ind.classList.remove('show'), 1500);
+  }
 
   const previewEl = document.getElementById(`saved_${field}_${id}`);
   if (previewEl) previewEl.innerHTML = renderSavedPreview(value);
+
   const timeEl = document.getElementById(`saved_${field}_time_${id}`);
   if (timeEl) timeEl.textContent = formatSavedTime(Date.now());
 }
 
-// ── Check Handlers ────────────────────────────────────────
-export function handleCheck(id, field, value) {
+function handleCheck(id, field, value) {
   setQ(id, { [field]: value });
-  // Update card style for completed
   if (field === 'completed') {
     const card = document.querySelector(`.q-card[data-id="${id}"]`);
     if (card) card.classList.toggle('completed-row', value);
   }
   calcStats();
+  updateSidebarCounts();
   if (field === 'revision' && value) showToast('Added to revision list! 🔁');
   if (field === 'completed' && value) showToast('Question marked complete! ✅');
 }
 
-// ── Star ──────────────────────────────────────────────────
-export function handleStar(id) {
-  const d = getQ(id);
+function handleStar(id) {
+  const d      = getQ(id);
   const newVal = !d.starred;
   setQ(id, { starred: newVal });
   const btn = document.querySelector(`.q-card[data-id="${id}"] .star-btn`);
@@ -443,9 +547,8 @@ export function handleStar(id) {
 }
 
 // ── Sidebar Navigation ────────────────────────────────────
-export function setActiveTopic(topic, clickedEl) {
+function setActiveTopic(topic, clickedEl) {
   activeTopicFilter = topic;
-  // Update sidebar active
   sidebarItems.forEach(el => el.classList.remove('active'));
   if (clickedEl) clickedEl.classList.add('active');
 
@@ -485,17 +588,12 @@ document.querySelectorAll('.status-chip').forEach(chip => {
 function applyFilters() {
   let filtered = [...QUESTIONS];
 
-  // Topic filter
   if (activeTopicFilter !== 'All') {
     filtered = filtered.filter(q => q.topic === activeTopicFilter);
   }
-
-  // Difficulty filter
   if (activeDiffFilter !== 'All') {
     filtered = filtered.filter(q => q.difficulty === activeDiffFilter);
   }
-
-  // Status filter
   if (activeStatusFilter === 'Completed') {
     filtered = filtered.filter(q => getQ(q.id).completed);
   } else if (activeStatusFilter === 'Pending') {
@@ -504,12 +602,11 @@ function applyFilters() {
     filtered = filtered.filter(q => getQ(q.id).starred);
   }
 
-  // Search filter
   const query = searchInput.value.trim().toLowerCase();
   if (query) {
     filtered = filtered.filter(q =>
-      q.title.toLowerCase().includes(query) ||
-      q.topic.toLowerCase().includes(query) ||
+      q.title.toLowerCase().includes(query)      ||
+      q.topic.toLowerCase().includes(query)      ||
       q.difficulty.toLowerCase().includes(query)
     );
   }
@@ -534,18 +631,17 @@ function showRevisionMode() {
 }
 
 function renderRevisionMode() {
-  // Starred
-  const starredList  = QUESTIONS.filter(q => getQ(q.id).starred);
-  const revList      = QUESTIONS.filter(q => getQ(q.id).revision);
-  const weakList     = QUESTIONS.filter(q => !getQ(q.id).completed && getQ(q.id).practiced);
-  const importantQ   = QUESTIONS.filter(q => q.starred); // from data
-  const freqAsked    = QUESTIONS.filter(q => ['Medium','Hard'].includes(q.difficulty));
+  const starredList = QUESTIONS.filter(q => getQ(q.id).starred);
+  const revList     = QUESTIONS.filter(q => getQ(q.id).revision);
+  const weakList    = QUESTIONS.filter(q => !getQ(q.id).completed && getQ(q.id).practiced);
+  const importantQ  = QUESTIONS.filter(q => q.starred);
+  const freqAsked   = QUESTIONS.filter(q => ['Medium', 'Hard'].includes(q.difficulty));
 
-  renderRevSection('revStarred',   starredList,  'No starred questions yet. Click ★ on any question!');
-  renderRevSection('revRevision',  revList,      'No questions added to revision yet. Check the 🔁 box!');
-  renderRevSection('revWeak',      weakList,     'No pending practiced questions. Keep going!');
+  renderRevSection('revStarred',   starredList,            'No starred questions yet. Click ★ on any question!');
+  renderRevSection('revRevision',  revList,                'No questions added to revision yet. Check the 🔁 box!');
+  renderRevSection('revWeak',      weakList,               'No pending practiced questions. Keep going!');
   renderRevSection('revImportant', importantQ.slice(0,15), 'No pre-marked important questions found.');
-  renderRevSection('revFrequent',  freqAsked.slice(0,20), '');
+  renderRevSection('revFrequent',  freqAsked.slice(0,20),  '');
 }
 
 function renderRevSection(containerId, questions, emptyMsg) {
@@ -556,7 +652,7 @@ function renderRevSection(containerId, questions, emptyMsg) {
     return;
   }
   el.innerHTML = questions.map(q => `
-    <div class="rev-item" onclick="jumpToQuestion(${q.id})">
+    <div class="rev-item" data-action="jump" data-id="${q.id}">
       <span class="rev-topic">${q.topic}</span>
       <span style="flex:1;font-size:0.85rem">${q.title}</span>
       <span class="q-badge ${q.difficulty}" style="font-size:0.65rem">${q.difficulty}</span>
@@ -564,10 +660,15 @@ function renderRevSection(containerId, questions, emptyMsg) {
   `).join('');
 }
 
-export function jumpToQuestion(id) {
+// Delegated click on revision panel
+revisionPanel.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-action="jump"]');
+  if (item) jumpToQuestion(Number(item.dataset.id));
+});
+
+function jumpToQuestion(id) {
   const q = QUESTIONS.find(x => x.id === id);
   if (!q) return;
-  // Switch to topic
   const sideItem = document.querySelector(`.sidebar-item[data-topic="${q.topic}"]`);
   setActiveTopic(q.topic, sideItem);
   setTimeout(() => {
@@ -575,18 +676,18 @@ export function jumpToQuestion(id) {
     if (card) {
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       card.style.transition = 'box-shadow 0.3s';
-      card.style.boxShadow = '0 0 0 2px var(--accent)';
+      card.style.boxShadow  = '0 0 0 2px var(--accent)';
       setTimeout(() => { card.style.boxShadow = ''; }, 1500);
     }
   }, 200);
 }
 
-export function openNoteEditor(id) {
+function openNoteEditor(id) {
   jumpToQuestion(id);
   setTimeout(() => openNotes(id), 300);
 }
 
-// ── Sidebar Toggle ────────────────────────────────────────
+// ── Sidebar toggle ────────────────────────────────────────
 document.getElementById('sidebarToggle').addEventListener('click', () => {
   if (window.innerWidth <= 768) {
     sidebar.classList.toggle('mobile-open');
@@ -595,17 +696,24 @@ document.getElementById('sidebarToggle').addEventListener('click', () => {
   }
 });
 
-// Close sidebar on mobile overlay click
 document.addEventListener('click', (e) => {
-  if (window.innerWidth <= 768 &&
-      sidebar.classList.contains('mobile-open') &&
-      !sidebar.contains(e.target) &&
-      !e.target.closest('#sidebarToggle')) {
+  if (
+    window.innerWidth <= 768 &&
+    sidebar.classList.contains('mobile-open') &&
+    !sidebar.contains(e.target) &&
+    !e.target.closest('#sidebarToggle')
+  ) {
     sidebar.classList.remove('mobile-open');
   }
 });
 
-// ── Dark/Light Mode ───────────────────────────────────────
+// ── Sidebar item click delegation ─────────────────────────
+document.getElementById('sidebar').addEventListener('click', (e) => {
+  const item = e.target.closest('.sidebar-item[data-topic]');
+  if (item) setActiveTopic(item.dataset.topic, item);
+});
+
+// ── Dark / Light mode ─────────────────────────────────────
 const themeBtn = document.getElementById('themeToggle');
 function applyTheme(mode) {
   document.body.classList.toggle('light', mode === 'light');
@@ -617,10 +725,10 @@ themeBtn.addEventListener('click', () => {
   applyTheme(current === 'light' ? 'dark' : 'light');
 });
 
-// ── Sidebar item counts ───────────────────────────────────
+// ── Sidebar counts ────────────────────────────────────────
 function updateSidebarCounts() {
   TOPICS.forEach(topic => {
-    const el = document.getElementById('count_' + topic.replace(/\s+/g,'_'));
+    const el = document.getElementById('count_' + topic.replace(/\s+/g, '_'));
     if (!el) return;
     if (topic === 'Revision') { el.textContent = '⭐'; return; }
     const total = QUESTIONS.filter(q => q.topic === topic).length;
@@ -629,10 +737,10 @@ function updateSidebarCounts() {
   });
 }
 
-// ── Toast ────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.createElement('div');
-  t.className = 'toast';
+  t.className   = 'toast';
   t.textContent = msg;
   toastContainer.appendChild(t);
   requestAnimationFrame(() => t.classList.add('show'));
@@ -642,27 +750,25 @@ function showToast(msg) {
   }, 2000);
 }
 
-// ── Image Upload / Gallery Handlers ─────────────────────
-export function handleImageUpload(id, inputEl) {
+// ── Image Handlers ────────────────────────────────────────
+function handleImageUpload(id, inputEl) {
   const file = inputEl.files && inputEl.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(e) {
-    const src = e.target.result;
-    const q = getQ(id);
+  reader.onload = function (e) {
+    const src    = e.target.result;
+    const q      = getQ(id);
     const images = q.images ? [...q.images] : [];
     images.push({ src, name: file.name, ts: Date.now() });
     setQ(id, { images });
     showToast('Image added');
-    // re-render current view
     applyFilters();
   };
   reader.readAsDataURL(file);
-  // clear input so same file can be uploaded again if needed
   inputEl.value = '';
 }
 
-export function removeImage(id, idx) {
+function removeImage(id, idx) {
   const q = getQ(id);
   if (!q.images || idx < 0 || idx >= q.images.length) return;
   q.images.splice(idx, 1);
@@ -671,27 +777,23 @@ export function removeImage(id, idx) {
   applyFilters();
 }
 
-// Open notes tab and focus textarea
-export function openNotes(id) {
+function openNotes(id) {
   const el  = document.getElementById('expand' + id);
   const btn = document.getElementById('expandBtn' + id);
   if (!el) return;
-  // open if closed
   if (!el.classList.contains('open')) {
     el.classList.add('open');
     if (btn) btn.classList.add('open');
   }
-  // switch to notes tab
-  switchTab(id, 'notes', document.querySelector(`#expand${id} .expand-tab`));
-  // focus textarea after a short delay to allow DOM
+  const firstTab = document.querySelector(`#expand${id} .expand-tab`);
+  if (firstTab) switchTab(id, 'notes', firstTab);
   setTimeout(() => {
     const ta = document.querySelector(`#panel_notes_${id} .notes-area`);
     if (ta) ta.focus();
   }, 200);
 }
 
-// Handle files dropped onto gallery
-export function handleDrop(event, id) {
+function handleDrop(event, id) {
   event.preventDefault();
   const files = event.dataTransfer && event.dataTransfer.files;
   if (!files || !files.length) return;
@@ -699,9 +801,9 @@ export function handleDrop(event, id) {
     const f = files[i];
     if (!f.type.startsWith('image/')) continue;
     const reader = new FileReader();
-    reader.onload = function(e) {
-      const src = e.target.result;
-      const q = getQ(id);
+    reader.onload = function (e) {
+      const src    = e.target.result;
+      const q      = getQ(id);
       const images = q.images ? [...q.images] : [];
       images.push({ src, name: f.name, ts: Date.now() });
       setQ(id, { images });
@@ -712,17 +814,16 @@ export function handleDrop(event, id) {
   }
 }
 
-// Handle paste (images from clipboard)
-export function handlePaste(e, id) {
+function handlePaste(e, id) {
   const items = (e.clipboardData && e.clipboardData.items) || [];
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     if (it.kind === 'file' && it.type.startsWith('image/')) {
-      const f = it.getAsFile();
+      const f      = it.getAsFile();
       const reader = new FileReader();
-      reader.onload = function(ev) {
-        const src = ev.target.result;
-        const q = getQ(id);
+      reader.onload = function (ev) {
+        const src    = ev.target.result;
+        const q      = getQ(id);
         const images = q.images ? [...q.images] : [];
         images.push({ src, name: f.name || 'pasted.png', ts: Date.now() });
         setQ(id, { images });
@@ -730,29 +831,25 @@ export function handlePaste(e, id) {
         showToast('Pasted image added');
       };
       reader.readAsDataURL(f);
-      // prevent the default paste behaviour for images
       e.preventDefault();
     }
   }
 }
 
-// ── Init ─────────────────────────────────────────────────
-// FIX 1: Listeners are registered only ONCE here, never inside init()
-// so re-calling init() (e.g. after signout) won't double-attach them.
+// ── Auth Event Listeners (registered once) ────────────────
 function registerListeners() {
   document.getElementById('authBtn').addEventListener('click', () => {
     const user = getCurrentUser();
     if (user) {
-      if (confirm('Sign out?')) { signoutUser(); }
+      if (confirm('Sign out?')) signoutUser();
       return;
     }
     openAuthModal();
   });
 
-  // FIX 1: signin — no more init() call, just refresh data manually
   document.getElementById('signinBtn').addEventListener('click', async () => {
-    const u = document.getElementById('authUser').value.trim();
-    const p = document.getElementById('authPass').value;
+    const u   = document.getElementById('authUser').value.trim();
+    const p   = document.getElementById('authPass').value;
     const err = signinUser(u, p);
     if (err) {
       document.getElementById('authMsg').textContent = err;
@@ -767,32 +864,22 @@ function registerListeners() {
     }
   });
 
-  // FIX 1: signup — same, no more init() call
   document.getElementById('signupBtn').addEventListener('click', async () => {
-    const u = document.getElementById('authUser').value.trim();
-    const p = document.getElementById('authPass').value;
+    const u   = document.getElementById('authUser').value.trim();
+    const p   = document.getElementById('authPass').value;
     const err = signupUser(u, p);
     if (err) {
       document.getElementById('authMsg').textContent = err;
     } else {
-
-  const currentData = loadState();
-
-  await saveUserData(
-    u,
-    currentData
-  );
-
-  calcStats();
-  updateSidebarCounts();
-  applyFilters();
-
-  closeAuthModal();
-
-  updateUserUI();
-
-  showToast('Account created & synced 🚀');
-}
+      const currentData = loadState();
+      await saveUserData(u, currentData);
+      calcStats();
+      updateSidebarCounts();
+      applyFilters();
+      closeAuthModal();
+      updateUserUI();
+      showToast('Account created & synced 🚀');
+    }
   });
 
   document.getElementById('authCloseBtn').addEventListener('click', closeAuthModal);
@@ -800,40 +887,36 @@ function registerListeners() {
   document.getElementById('notesCloseBtn').addEventListener('click', closeNotesModal);
 }
 
+// ── Init ──────────────────────────────────────────────────
 async function init() {
   await syncFromFirebase();
 
-  // Theme
   const savedTheme = localStorage.getItem('tcs_theme') || 'dark';
   applyTheme(savedTheme);
 
-  // Stats
   calcStats();
   updateSidebarCounts();
 
-  // Default view: All questions
   const allBtn = document.querySelector('.sidebar-item[data-topic="All"]');
   setActiveTopic('All', allBtn);
 
   updateUserUI();
 }
 
-// FIX 1: DOMContentLoaded fires init + registerListeners exactly ONCE
-window.addEventListener('DOMContentLoaded', async () => {
+// ── Bootstrap: dynamic import firebase, then start app ────
+// Using dynamic import() keeps firebase.js as an ES module (required
+// for the CDN imports inside it), while script.js itself stays a
+// plain classic script — so nothing inside it is module-scoped.
+(async function bootstrap() {
+  try {
+    const fb    = await import('./firebase.js');
+    saveUserData = fb.saveUserData;
+    loadUserData = fb.loadUserData;
+    console.log('Firebase loaded ✅');
+  } catch (err) {
+    console.warn('Firebase unavailable, running in localStorage-only mode.', err);
+  }
+
   registerListeners();
   await init();
-});
-
-window.handleCheck = handleCheck;
-window.handleStar = handleStar;
-window.toggleExpand = toggleExpand;
-window.switchTab = switchTab;
-window.autoSave = autoSave;
-window.openNotes = openNotes;
-window.handleImageUpload = handleImageUpload;
-window.removeImage = removeImage;
-window.handleDrop = handleDrop;
-window.handlePaste = handlePaste;
-window.jumpToQuestion = jumpToQuestion;
-window.openNoteEditor = openNoteEditor;
-window.setActiveTopic = setActiveTopic;
+})();
