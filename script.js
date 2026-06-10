@@ -775,14 +775,24 @@ function registerListeners() {
     if (err) {
       document.getElementById('authMsg').textContent = err;
     } else {
-      await syncFromFirebase();
-      calcStats();
-      updateSidebarCounts();
-      applyFilters();
-      closeAuthModal();
-      updateUserUI();
-      showToast('Account created & signed in 🚀');
-    }
+
+  const currentData = loadState();
+
+  await saveUserData(
+    u,
+    currentData
+  );
+
+  calcStats();
+  updateSidebarCounts();
+  applyFilters();
+
+  closeAuthModal();
+
+  updateUserUI();
+
+  showToast('Account created & synced 🚀');
+}
   });
 
   document.getElementById('authCloseBtn').addEventListener('click', closeAuthModal);
