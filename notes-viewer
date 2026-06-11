@@ -1,56 +1,31 @@
 /* ================================================================
-   notes-viewer.css  —  Premium Redesigned Note Viewer Modal
-   Link AFTER style.css in index.html for a breathtaking UI
-   ================================================================ */
-
-:root {
-  --nv-bg-blur: rgba(11, 15, 27, 0.82);
-  --nv-card-bg: linear-gradient(145deg, #111a2e, #0a1120);
-  --nv-border-glow: rgba(99, 179, 237, 0.15);
-  --nv-text-primary: #e2e8f0;
-  --nv-text-muted: #94a3b8;
-  --nv-accent: #63b3ed;
-  --nv-accent-hover: #90cdf4;
-  --nv-success: #00d4aa;
-}
+   notes-viewer.css  —  Add-on styles for Note Viewer Modal
+   Link AFTER style.css in index.html
+   ================================================================================ */
 
 /* ── Panel top bar (edit area header row) ──────────────────── */
 .panel-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  padding: 4px 0;
+  margin-bottom: 6px;
 }
-.panel-top-bar .area-label { 
-  margin-bottom: 0; 
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--nv-accent);
-}
+.panel-top-bar .area-label { margin-bottom: 0; }
 
 .view-rendered-btn {
-  background: linear-gradient(135deg, rgba(99, 179, 237, 0.15), rgba(99, 179, 237, 0.05));
-  border: 1px solid rgba(99, 179, 237, 0.35);
-  color: #90cdf4;
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: rgba(99,179,237,0.12);
+  border: 1px solid rgba(99,179,237,0.3);
+  color: #63b3ed;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.2s, color 0.2s;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(99, 179, 237, 0.08);
 }
 .view-rendered-btn:hover {
-  background: linear-gradient(135deg, rgba(99, 179, 237, 0.25), rgba(99, 179, 237, 0.1));
-  color: #ffffff;
-  border-color: #63b3ed;
-  box-shadow: 0 4px 12px rgba(99, 179, 237, 0.2);
-  transform: translateY(-1px);
-}
-.view-rendered-btn:active {
-  transform: translateY(0);
+  background: rgba(99,179,237,0.22);
+  color: #90cdf4;
 }
 
 /* Notes button has-notes indicator */
@@ -60,488 +35,341 @@
 .notes-btn.has-notes::after {
   content: '';
   position: absolute;
-  top: 1px; 
-  right: 1px;
-  width: 8px; 
-  height: 8px;
-  background: var(--nv-success);
+  top: 2px; right: 2px;
+  width: 7px; height: 7px;
+  background: #00d4aa;
   border-radius: 50%;
-  border: 2px solid #1a1a2e;
-  box-shadow: 0 0 8px var(--nv-success);
-  animation: pulseGlow 2s infinite;
-}
-
-@keyframes pulseGlow {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 12px var(--nv-success); }
-  100% { transform: scale(0.95); opacity: 0.8; }
+  border: 1px solid var(--bg-card, #1a1a2e);
 }
 
 /* ── Note Viewer Modal overlay ─────────────────────────────── */
 .note-viewer-modal {
   position: fixed;
   inset: 0;
-  background: rgba(4, 7, 13, 0.85);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 16px;
   box-sizing: border-box;
 }
 
+/* 1. Updated .note-viewer-inner */
 .note-viewer-inner {
-  background: var(--nv-card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 880px;
-  max-height: 88vh;
+  background: rgba(17,25,40,.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 24px;
+  width: 95vw;
+  max-width: 1300px;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 
-              0 0 0 1px var(--nv-border-glow),
-              inset 0 1px 2px rgba(255, 255, 255, 0.05);
-  animation: nvSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 20px 80px rgba(0,0,0,.7),
+    0 0 0 1px rgba(99,179,237,.1);
+  animation: nvSlideIn 0.22s ease;
 }
-
 @keyframes nvSlideIn {
-  from { opacity: 0; transform: translateY(30px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity:0; transform:translateY(24px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
 }
 
 /* ── Viewer Header ─────────────────────────────────────────── */
+/* 2. Premium header */
 .nv-header {
-  padding: 22px 28px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 24px 30px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(99,179,237,.08),
+      transparent
+    );
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   position: relative;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.01);
 }
-
 .nv-header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
-
 .nv-q-num {
-  font-size: 0.78rem;
-  color: #74809e;
-  font-weight: 700;
-  font-family: 'Fira Code', 'Cascadia Code', monospace;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.75rem;
+  color: var(--text-muted, #7a8bb5);
+  font-family: monospace;
+  background: rgba(255,255,255,0.06);
+  padding: 2px 7px;
+  border-radius: 4px;
 }
-
 .nv-topic-badge {
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #63b3ed;
-  background: rgba(99, 179, 237, 0.12);
-  padding: 4px 10px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  border: 1px solid rgba(99, 179, 237, 0.15);
-}
-
-.nv-diff-badge {
-  font-size: 0.72rem;
-  font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 6px;
+  background: rgba(99,179,237,0.12);
+  padding: 2px 8px;
+  border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.nv-diff-badge.Easy   { background: rgba(72, 187, 120, 0.15); color: #4ade80; border: 1px solid rgba(72, 187, 120, 0.25); }
-.nv-diff-badge.Medium { background: rgba(237, 137, 54, 0.15);  color: #fbd38d; border: 1px solid rgba(237, 137, 54, 0.25); }
-.nv-diff-badge.Hard   { background: rgba(245, 101, 101, 0.15); color: #fc8181; border: 1px solid rgba(245, 101, 101, 0.25); }
-
-.nv-title {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 0;
-  padding-right: 44px;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
+.nv-diff-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
+/* reuse q-badge color vars */
+.nv-diff-badge.Easy   { background: rgba(72,187,120,0.2); color: #48bb78; }
+.nv-diff-badge.Medium { background: rgba(237,137,54,0.2);  color: #ed8936; }
+.nv-diff-badge.Hard   { background: rgba(245,101,101,0.2); color: #f56565; }
 
+/* 3. Title */
+.nv-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1.4;
+  margin-top: 10px;
+  margin: 0;
+  padding-right: 36px;
+}
 .nv-close-btn {
   position: absolute;
-  top: 20px; 
-  right: 24px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--nv-text-muted);
-  width: 34px; 
-  height: 34px;
+  top: 14px; right: 16px;
+  background: rgba(255,255,255,0.07);
+  border: none;
+  color: var(--text-muted, #7a8bb5);
+  width: 30px; height: 30px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 1rem;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, color 0.2s;
 }
-.nv-close-btn:hover { 
-  background: rgba(245, 101, 101, 0.18); 
-  color: #fc8181; 
-  border-color: rgba(245, 101, 101, 0.3);
-  transform: rotate(90deg);
-}
+.nv-close-btn:hover { background: rgba(245,101,101,0.2); color: #f56565; }
 
 /* ── Viewer Tabs ───────────────────────────────────────────── */
+/* 4. Tabs */
 .nv-tabs {
+  padding: 16px 24px;
+  gap: 10px;
   display: flex;
-  gap: 6px;
-  padding: 12px 24px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
   flex-wrap: wrap;
-  background: rgba(0, 0, 0, 0.1);
 }
-
 .nv-tab {
-  background: transparent;
   border: none;
-  border-bottom: 3px solid transparent;
-  color: var(--nv-text-muted);
-  font-size: 0.88rem;
-  font-weight: 700;
+  background: rgba(255,255,255,.05);
+  color: #9aa4b2;
+  border-radius: 12px;
   padding: 10px 18px;
+  transition: .3s;
   cursor: pointer;
-  transition: all 0.25s ease;
+  font-size: 0.82rem;
+  font-weight: 600;
   margin-bottom: -1px;
-  border-radius: 8px 8px 0 0;
 }
-.nv-tab:hover { 
-  color: #ffffff; 
-  background: rgba(255, 255, 255, 0.03);
-}
+.nv-tab:hover { color: var(--text-primary, #e2e8f0); }
 .nv-tab.active {
+  background: rgba(99,179,237,.15);
   color: #63b3ed;
-  border-bottom-color: #63b3ed;
-  background: rgba(99, 179, 237, 0.08);
-  text-shadow: 0 0 10px rgba(99, 179, 237, 0.3);
+  border: 1px solid rgba(99,179,237,.3);
 }
 
 /* ── Viewer Body (scrollable content area) ─────────────────── */
+/* 5. Body */
 .nv-body {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 32px;
+  padding: 35px;
+  font-size: 16px;
+  line-height: 1.9;
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 179, 237, 0.25) transparent;
-  background: linear-gradient(to bottom, transparent, rgba(10, 15, 30, 0.15));
+  scrollbar-color: rgba(99,179,237,0.3) transparent;
 }
-.nv-body::-webkit-scrollbar { width: 6px; }
-.nv-body::-webkit-scrollbar-track { background: transparent; }
-.nv-body::-webkit-scrollbar-thumb { background: rgba(99, 179, 237, 0.2); border-radius: 10px; }
-.nv-body::-webkit-scrollbar-thumb:hover { background: rgba(99, 179, 237, 0.4); }
-
-/* ── Viewer Footer ─────────────────────────────────────────── */
-.nv-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 28px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  gap: 12px;
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.nv-saved-time {
-  font-size: 0.78rem;
-  color: var(--nv-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.nv-saved-time::before {
-  content: "🕒";
-  font-size: 0.85rem;
-}
-
-.nv-footer-actions { 
-  display: flex; 
-  gap: 10px; 
-}
-
-/* Edit Notes Button & Dialog buttons matching site colors */
-.nv-footer-actions button,
-.note-viewer-modal button.edit-btn {
-  background: #00d4aa;
-  color: #0c101b;
-  border: none;
-  font-weight: 700;
-  border-radius: 8px;
-  padding: 8px 18px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 212, 170, 0.2);
-}
-.nv-footer-actions button:hover {
-  background: #33e0bb;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 212, 170, 0.35);
-}
-.nv-footer-actions button.close-modal-footer {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--nv-text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: none;
-}
-.nv-footer-actions button.close-modal-footer:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-}
+.nv-body::-webkit-scrollbar { width: 5px; }
+.nv-body::-webkit-scrollbar-thumb { background: rgba(99,179,237,0.3); border-radius: 3px; }
 
 /* ── Markdown Rendered Styles ──────────────────────────────── */
+/* 6. Markdown */
 .nv-markdown-body {
-  color: var(--nv-text-primary);
-  font-size: 0.98rem;
-  line-height: 1.8;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 950px;
+  margin: auto;
+  color: #e5e7eb;
+  font-size: 16px;
+  line-height: 1.75;
 }
-.md-empty { 
-  color: var(--nv-text-muted); 
-  font-style: italic; 
-  text-align: center;
-  padding: 40px 0;
-  font-size: 0.92rem;
-}
+.md-empty { color: var(--text-muted, #7a8bb5); font-style: italic; }
 
-.md-h1, .md-h2, .md-h3, .md-h4 {
-  font-weight: 800;
-  color: #ffffff;
-  margin: 1.6em 0 0.6em;
+/* 7. Headings */
+.md-h1 {
+  font-size: 2rem;
+  color: #58a6ff;
+  margin-bottom: 20px;
+  border-bottom: 2px solid rgba(88,166,255,.2);
+  padding-bottom: 10px;
+  font-weight: 700;
   line-height: 1.3;
 }
-.md-h1 { 
-  font-size: 1.6rem; 
-  border-bottom: 2px solid rgba(99, 179, 237, 0.2); 
-  padding-bottom: 8px; 
+.md-h2 {
+  font-size: 1.5rem;
+  color: #79c0ff;
+  margin-top: 30px;
+  font-weight: 700;
+  line-height: 1.3;
 }
-.md-h2 { 
-  font-size: 1.35rem; 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
-  padding-bottom: 6px; 
-  color: #90cdf4;
+.md-h3 {
+  font-size: 1.2rem;
+  color: #a5d6ff;
+  font-weight: 700;
+  line-height: 1.3;
 }
-.md-h3 { 
-  font-size: 1.15rem; 
-  color: #63b3ed; 
-}
-.md-h4 { 
-  font-size: 1.02rem; 
-  color: #76c9d8; 
-}
+.md-h4 { font-size: 0.98rem; color: #76c9d8; font-weight: 700; line-height: 1.3; }
+.md-h5,.md-h6 { font-size: 0.9rem; color: #7a8bb5; font-weight: 700; line-height: 1.3; }
 
 .md-p {
-  margin: 0.8em 0;
-  color: #cbd5e1;
+  margin: 0.55em 0;
 }
 
-.md-bold { 
-  font-weight: 700; 
-  color: #fbd38d; 
-}
-.md-italic { 
-  font-style: italic; 
-  color: #d6bcfa; 
-}
-.md-del { 
-  text-decoration: line-through; 
-  color: #64748b; 
-}
+.md-bold   { font-weight: 700; color: #f6e05e; }
+.md-italic { font-style: italic; color: #d6bcfa; }
+.md-del    { text-decoration: line-through; color: var(--text-muted, #7a8bb5); }
 .md-mark {
-  background: rgba(246, 224, 94, 0.18);
+  background: rgba(246,224,94,0.2);
   color: #f6e05e;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(246, 224, 94, 0.25);
-  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
-/* Styled inline code blocks */
+/* 9. Inline Code */
 .md-inline-code {
-  font-family: 'Fira Code', 'Cascadia Code', Consolas, monospace;
-  font-size: 0.88em;
-  background: rgba(99, 179, 237, 0.12);
-  color: #4ade80;
-  padding: 2px 6px;
+  background: rgba(88,166,255,.15);
+  color: #58a6ff;
+  padding: 3px 8px;
   border-radius: 6px;
-  border: 1px solid rgba(99, 179, 237, 0.18);
-  word-break: break-word;
+  font-weight: 600;
+  font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.85em;
+  border: 1px solid rgba(99,179,237,0.2);
 }
 
-/* ── Code Block Redesign with macOS Controls ──────────────── */
+/* 8. Code Block (Most Important) */
 .md-code-block {
-  background: #090d16;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 44px 20px 18px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 25px 0;
   overflow-x: auto;
-  margin: 18px 0;
+  box-shadow:
+    0 12px 40px rgba(0,0,0,.4);
   position: relative;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
-
-/* Three elegant dots styling Mac shell header style */
-.md-code-block::after {
-  content: "";
-  position: absolute;
-  top: 16px; 
-  left: 18px;
-  width: 10px; 
-  height: 10px;
-  border-radius: 50%;
-  background: #fc605c;
-  box-shadow: 16px 0 0 #fdbb2d, 32px 0 0 #34c749;
-}
-
-/* Floating language label */
 .md-code-block::before {
   content: attr(data-lang);
   position: absolute;
-  top: 12px; 
-  right: 18px;
+  top: 8px; right: 12px;
   font-size: 0.68rem;
-  color: #475569;
+  color: #4a5568;
   text-transform: uppercase;
-  font-family: system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-family: monospace;
 }
-
 .md-code-block code {
-  font-family: 'Fira Code', 'Cascadia Code', 'Fira Mono', Consolas, monospace;
-  font-size: 0.88rem;
-  color: #e2e8f0;
-  line-height: 1.65;
+  font-family:
+    "JetBrains Mono",
+    "Fira Code",
+    monospace;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #c9d1d9;
   white-space: pre;
-  display: block;
-  scrollbar-width: thin;
 }
+/* Syntax highlight hints */
+.md-code-block .lang-java code,
+.md-code-block .lang-python code,
+.md-code-block .lang-cpp code,
+.md-code-block .lang-js code,
+.md-code-block .lang-javascript code { color: #a8d8a8; }
 
-/* Dynamic programming comment / text highlights inside notes */
-.md-code-block code .comment,
-.md-code-block code span[class*="comment"] {
-  color: #64748b !important;
-  font-style: italic;
-}
-
-/* Code layout wraps */
 .nv-code-full {
   margin: 0;
-  border-radius: 12px;
-  min-height: 140px;
-  background: #090d16 !important;
+  border-radius: 10px;
+  min-height: 120px;
 }
-.nv-code-wrap { 
-  padding: 2px; 
-}
+.nv-code-wrap { padding: 2px; }
 
-/* Premium Blockquote styling */
+/* 10. Blockquote */
 .md-blockquote {
+  background: rgba(99,179,237,.08);
   border-left: 4px solid #63b3ed;
-  background: rgba(99, 179, 237, 0.06);
-  padding: 12px 18px;
-  margin: 16px 0;
-  border-radius: 0 10px 10px 0;
-  color: #94a3b8;
+  padding: 16px;
+  border-radius: 10px;
+  margin: 18px 0;
+  color: #d1d5db;
   font-style: italic;
-  font-size: 0.94rem;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
 }
 
 .md-hr {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin: 24px 0;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 16px 0;
 }
 
-/* Bullet points and Lists */
+/* 11. Lists */
 .md-ul, .md-ol {
-  padding-left: 1.6em;
-  margin: 12px 0;
+  padding-left: 1.5em;
+  margin: 8px 0;
 }
 .md-ul li, .md-ol li {
-  margin: 6px 0;
-  color: #cbd5e1;
-  padding-left: 2px;
+  margin: 10px 0;
+  color: var(--text-primary, #e2e8f0);
 }
-.md-ul li::marker { 
-  color: #63b3ed; 
-}
-.md-ol li::marker { 
-  color: #63b3ed; 
-  font-weight: 800; 
-}
+.md-ul li::marker { color: #63b3ed; }
+.md-ol li::marker { color: #63b3ed; font-weight: 700; }
 
-/* Elegant checklist design */
 .md-task {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 8px 0;
-  font-size: 0.95rem;
+  gap: 8px;
+  margin: 5px 0;
+  cursor: default;
+  font-size: 0.9rem;
 }
-.md-task input { 
-  accent-color: #63b3ed; 
-  width: 16px; 
-  height: 16px; 
-  cursor: pointer; 
-  border-radius: 4px;
-  background: rgba(255,255,255,0.05);
-}
-.md-task.done { 
-  text-decoration: line-through; 
-  color: #475569; 
-}
+.md-task input { accent-color: #63b3ed; width: 15px; height: 15px; cursor: default; }
+.md-task.done { text-decoration: line-through; color: var(--text-muted, #7a8bb5); }
 
-/* ── Image Grid inside Modal ───────────────────────────────── */
+/* ── Image Grid in Viewer ──────────────────────────────────── */
 .nv-image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 18px;
-  padding: 4px 0;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  padding: 4px;
 }
 .nv-img-wrap {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
   overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 .nv-img-wrap:hover {
-  transform: translateY(-4px);
-  border-color: rgba(99, 179, 237, 0.25);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 .nv-img-wrap img {
   width: 100%;
   display: block;
   cursor: zoom-in;
-  transition: all 0.3s ease;
-  max-height: 240px;
+  transition: transform 0.25s;
+  max-height: 220px;
   object-fit: cover;
 }
 .nv-img-wrap img.nv-img-zoom {
@@ -549,42 +377,46 @@
   transform: scale(1);
   cursor: zoom-out;
   object-fit: contain;
-  background: #04070d;
+  background: #000;
 }
 .nv-img-name {
-  font-size: 0.74rem;
-  color: var(--nv-text-muted);
-  padding: 8px 12px;
+  font-size: 0.72rem;
+  color: var(--text-muted, #7a8bb5);
+  padding: 6px 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.1);
-  font-weight: 500;
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 
-/* ── Responsive breakpoints ────────────────────────────────── */
-@media (max-width: 680px) {
-  .note-viewer-inner { 
-    border-radius: 16px; 
-    max-height: 94vh; 
-  }
-  .nv-body { 
-    padding: 16px 20px; 
-  }
-  .nv-header { 
-    padding: 16px 20px 12px; 
-  }
-  .nv-tabs { 
-    padding: 8px 20px 0; 
-  }
-  .nv-image-grid { 
-    grid-template-columns: 1fr 1fr; 
-  }
-  .nv-title { 
-    font-size: 1.1rem; 
-  }
-  .md-code-block {
-    padding: 38px 14px 14px;
-  }
+/* ── Viewer Footer ─────────────────────────────────────────── */
+/* 12. Footer */
+.nv-footer {
+  padding: 18px 24px;
+  background: rgba(255,255,255,.02);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nv-saved-time {
+  font-size: 0.75rem;
+  color: var(--text-muted, #7a8bb5);
+}
+.nv-footer-actions { display: flex; gap: 8px; }
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .note-viewer-inner { border-radius: 12px; max-height: 95vh; width: 100vw; }
+  .nv-body { padding: 14px 14px; }
+  .nv-header { padding: 16px 18px; }
+  .nv-tabs { padding: 12px 18px; }
+  .nv-image-grid { grid-template-columns: 1fr 1fr; }
+  .nv-title { font-size: 1.2rem; }
+  .md-h1 { font-size: 1.6rem; }
+  .md-h2 { font-size: 1.3rem; }
+  .md-h3 { font-size: 1.1rem; }
 }
