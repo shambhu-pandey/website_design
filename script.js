@@ -120,12 +120,12 @@ function renderMarkdown(raw) {
 
   // Fenced code blocks (``` ... ```)
   html = html.replace(/```([a-zA-Z]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-    const cls = lang ? ` class="lang-${lang.toLowerCase()}"` : '';
-    return `<pre class="md-code-block"><code${cls}>${code.trim()}</code></pre>`;
+    const langCls = lang ? ` class="lang-${lang.toLowerCase()}"` : '';
+    return `<div class="md-code-block" data-lang="${lang||'text'}"><code${langCls}>${code.trim()}</code></div>`;
   });
 
   // Inline code
-  html = html.replace(/`([^`\n]+)`/g, '<code class="md-inline-code">$1</code>');
+  html = html.replace(/`([^`\n]+)`/g, '<code class="md-inline-code" style="font-weight:600">$1</code>');
 
   // Headings
   html = html.replace(/^######\s(.+)$/gm, '<h6 class="md-h6">$1</h6>');
@@ -192,7 +192,7 @@ function openNoteViewer(id) {
   if (!modal) {
     modal = document.createElement('div');
     modal.id        = 'noteViewerModal';
-    modal.className = 'modal note-viewer-modal';
+    modal.className = 'note-viewer-modal';
     document.body.appendChild(modal);
 
     // Close on backdrop click
@@ -233,28 +233,27 @@ function openNoteViewer(id) {
       </div>`;
     }
     if (key === 'code') {
-      // Always render code in a code block
       const raw = d[key] || '';
-      return `<div class="nv-code-wrap"><pre class="md-code-block nv-code-full"><code>${escapeHtml(raw)}</code></pre></div>`;
+      return `<div class="nv-code-wrap"><div class="md-code-block nv-code-full" data-lang="text"><code>${escapeHtml(raw)}</code></div></div>`;
     }
     return `<div class="nv-markdown-body">${renderMarkdown(d[key] || '')}</div>`;
   }
 
   modal.innerHTML = `
-    <div class="modal-inner note-viewer-inner">
+    <div class="note-viewer-inner">
       <div class="nv-header">
         <div class="nv-header-left">
-          <span class="nv-q-num">#${String(q.id).padStart(3,'0')}</span>
-          <span class="nv-topic-badge">${escapeHtml(q.topic)}</span>
-          <span class="nv-diff-badge ${q.difficulty}">${q.difficulty}</span>
+          <span class="nv-q-num" id="nvQNum">#${String(q.id).padStart(3,'0')}</span>
+          <span class="nv-topic-badge" id="nvTopicBadge">${escapeHtml(q.topic)}</span>
+          <span class="nv-diff-badge ${q.difficulty.toLowerCase()}" id="nvDiffBadge">${q.difficulty}</span>
         </div>
-        <h3 class="nv-title">${escapeHtml(q.title)}</h3>
-        <button class="nv-close-btn" id="nvCloseBtn" title="Close">✕</button>
+        <h1 class="nv-title" id="nvTitle">${escapeHtml(q.title)}</h1>
+        <button class="nv-close-btn" id="nvCloseBtn" title="Close">×</button>
       </div>
 
       <div class="nv-tabs" id="nvTabs">
         ${tabs.map((t,i) => `
-          <button class="nv-tab ${i===0?'active':''}" data-nv-tab="${t.key}">
+          <button class="nv-tab ${i===0?'active':''}" data-nv-tab="${t.key}" id="tab_${t.key}">
             ${t.icon} ${t.label}
           </button>`).join('')}
       </div>
@@ -264,7 +263,7 @@ function openNoteViewer(id) {
       </div>
 
       <div class="nv-footer">
-        <span class="nv-saved-time">${formatSavedTime(d.updatedAt)}</span>
+        <span class="nv-saved-time" id="nvSavedTime">${formatSavedTime(d.updatedAt)}</span>
         <div class="nv-footer-actions">
           <button class="link-btn" id="nvEditBtn">✏️ Edit Notes</button>
           <button class="link-btn" id="nvCloseBtn2">Close</button>
@@ -503,10 +502,6 @@ function renderQuestions(questions) {
 const saveTimers = {};
 
 questionList.addEventListener('click', (e) => {
-  // IMPORTANT: Check specific actions BEFORE the generic expand check.
-  // star/notes/view-notes buttons are INSIDE the q-header which has
-  // data-action="expand" — so we must intercept them first.
-
   // ── Star ──
   const starBtn = e.target.closest('[data-action="star"]');
   if (starBtn) { handleStar(Number(starBtn.dataset.id)); return; }
